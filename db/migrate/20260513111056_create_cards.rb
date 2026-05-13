@@ -11,7 +11,7 @@ class CreateCards < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :cards, [:board_id, :status, :position]
+    add_index :cards, [ :board_id, :status, :position ]
     add_index :cards, :discarded_at
   end
 end

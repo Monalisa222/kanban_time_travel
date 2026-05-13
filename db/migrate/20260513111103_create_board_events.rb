@@ -9,7 +9,7 @@ class CreateBoardEvents < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :board_events, [:board_id, :created_at]
+    add_index :board_events, [ :board_id, :created_at ]
     add_index :board_events, :event_type
     add_index :board_events, :event_data, using: :gin
   end
