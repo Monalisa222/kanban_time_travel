@@ -9,6 +9,14 @@ class Card < ApplicationRecord
 
   STATUS_ORDER = STATUSES.values.freeze
 
+  STATUS_LABELS = {
+    "backlog" => "Backlog",
+    "todo" => "To Do",
+    "in_progress" => "In Progress",
+    "in_review" => "In Review",
+    "done" => "Done"
+  }.freeze
+
   belongs_to :board
 
   has_many :board_events, dependent: :destroy

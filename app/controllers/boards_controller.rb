@@ -17,7 +17,7 @@ class BoardsController < ApplicationController
     Card::STATUS_ORDER.map do |status|
       {
         key: status,
-        title: status.titleize,
+        title: Card::STATUS_LABELS.fetch(status),
         cards: []
       }
     end
