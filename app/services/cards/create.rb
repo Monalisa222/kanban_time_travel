@@ -9,7 +9,7 @@ module Cards
 
     def call
       Card.transaction do
-        card = board.cards.create!(
+        card = @board.cards.create!(
           title: title,
           description: description,
           status: status,
