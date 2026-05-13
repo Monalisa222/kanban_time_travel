@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "vite": "^8.0.12",
+    "vite-plugin-ruby": "^5.2.2"
+  },
+  "dependencies": {
+    "@inertiajs/react": "^3.1.1",
+    "@inertiajs/vite": "^3.1.1",
+    "@vitejs/plugin-react": "^6.0.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  }
+}
