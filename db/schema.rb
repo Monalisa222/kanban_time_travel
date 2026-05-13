@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_13_111103) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_13_165542) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -37,7 +37,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_111103) do
   create_table "cards", force: :cascade do |t|
     t.bigint "board_id", null: false
     t.datetime "created_at", null: false
-    t.text "description", null: false
+    t.text "description"
     t.datetime "discarded_at"
     t.decimal "position", precision: 20, scale: 10, null: false
     t.string "status", null: false
