@@ -1,5 +1,20 @@
 import { useState } from 'react'
-import { useForm } from '@inertiajs/react'
+import { useForm, router } from '@inertiajs/react'
+
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 export default function Show({ board, columns, flash }) {
   const { data, setData, post, processing, reset } = useForm({
@@ -16,7 +31,68 @@ export default function Show({ board, columns, flash }) {
     post(`/boards/${board.id}/cards`, {
       onSuccess: () => reset(),
     })
-}
+  }
+  const [activeCard, setActiveCard] = useState(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+  )
+  function findCard(cardId) {
+    return columns.flatMap((column) => column.cards).find((card) => card.id === Number(cardId))
+  }
+
+  function findColumnByCard(cardId) {
+    return columns.find((column) =>
+      column.cards.some((card) => card.id === Number(cardId)),
+    )
+  }
+
+  function findColumnByDroppableId(id) {
+    return columns.find((column) => column.key === id)
+  }
+
+  function handleDragStart(event) {
+    setActiveCard(findCard(event.active.id))
+  }
+
+  function handleDragEnd(event) {
+    const { active, over } = event
+    setActiveCard(null)
+
+    if (!over) return
+
+    const card = findCard(active.id)
+    const sourceColumn = findColumnByCard(active.id)
+    const targetColumn =
+      findColumnByCard(over.id) || findColumnByDroppableId(over.id)
+
+    if (!card || !sourceColumn || !targetColumn) return
+
+    const targetCards = targetColumn.cards.filter(
+      (targetCard) => targetCard.id !== card.id,
+    )
+
+    const overCardIndex = targetCards.findIndex(
+      (targetCard) => targetCard.id === Number(over.id),
+    )
+
+    const insertIndex = overCardIndex >= 0 ? overCardIndex : targetCards.length
+
+    const previousCard = targetCards[insertIndex - 1]
+    const nextCard = targetCards[insertIndex]
+
+    router.patch(`/boards/${board.id}/cards/${card.id}/move`, {
+      card: {
+        target_status: targetColumn.key,
+        previous_position: previousCard?.position || null,
+        next_position: nextCard?.position || null,
+      },
+    })
+  }
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <header className="mb-6">
@@ -88,36 +164,29 @@ export default function Show({ board, columns, flash }) {
           </div>
         </div>
       </form>
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-5">
-        {columns.map((column) => (
-          <div
-            key={column.key}
-            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-lg hover:border-slate-300"
-            >
-            <h2 className="text-sm font-semibold text-slate-800">
-              {column.title}
-            </h2>
-    
-            <div className="space-y-3">
-              {column.cards.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-400">
-                  No cards yet
-                </div>
-              ) : (
-                column.cards.map((card) => (
-                  <CardItem
-                  key={card.id}
-                  boardId={board.id}
-                  card={card}
-                  editingCardId={editingCardId}
-                  setEditingCardId={setEditingCardId}
-                />
-                ))
-              )}
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd} >
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-5">
+          {columns.map((column) => (
+            <BoardColumn
+              key={column.key}
+              boardId={board.id}
+              column={column}
+              editingCardId={editingCardId}
+              setEditingCardId={setEditingCardId}
+            />
+          ))}
+        </section>
+        <DragOverlay>
+          {activeCard ? (
+            <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
+              <h3 className="font-medium text-slate-900">{activeCard.title}</h3>
             </div>
-          </div>
-        ))}
-      </section>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     </main>
   )
   function CardItem({ boardId, card, editingCardId, setEditingCardId }) {
@@ -208,6 +277,72 @@ export default function Show({ board, columns, flash }) {
           </button>
         </div>
       </article>
+    )
+  }
+  function BoardColumn({ boardId, column, editingCardId, setEditingCardId }) {
+    const { setNodeRef } = useDroppable({
+      id: column.key,
+    })
+
+    return (
+      <div
+        ref={setNodeRef}
+        className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+      >
+        <h2 className="mb-4 font-semibold text-slate-800">{column.title}</h2>
+
+        <SortableContext
+          items={column.cards.map((card) => card.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-3">
+            {column.cards.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-400">
+                No cards yet
+              </div>
+            ) : (
+              column.cards.map((card) => (
+                <SortableCardItem
+                  key={card.id}
+                  boardId={boardId}
+                  card={card}
+                  editingCardId={editingCardId}
+                  setEditingCardId={setEditingCardId}
+                />
+              ))
+            )}
+          </div>
+        </SortableContext>
+      </div>
+    )
+  }
+  function SortableCardItem(props) {
+    const { card } = props
+
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: card.id })
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    }
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={isDragging ? 'opacity-40' : ''}
+        {...attributes}
+        {...listeners}
+      >
+        <CardItem {...props} />
+      </div>
     )
   }
 }

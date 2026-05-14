@@ -1,6 +1,6 @@
 class CardsController < ApplicationController
   before_action :set_board
-  before_action :set_card, only: [ :update, :destroy ]
+  before_action :set_card, only: [ :update, :destroy, :move ]
 
   rescue_from ActiveRecord::RecordInvalid, with: :handle_record_invalid
   rescue_from ActiveRecord::RecordNotFound, with: :handle_record_not_found
@@ -28,6 +28,17 @@ class CardsController < ApplicationController
     redirect_to board_path(@board), notice: "Card deleted successfully."
   end
 
+  def move
+    ::Cards::Move.new(
+      card: @card,
+      target_status: move_params[:target_status],
+      previous_position: move_params[:previous_position],
+      next_position: move_params[:next_position]
+    ).call
+
+    redirect_to board_path(@board), notice: "Card moved successfully."
+  end
+
   private
 
   def set_board
@@ -40,6 +51,14 @@ class CardsController < ApplicationController
 
   def card_params
     params.require(:card).permit(:board_id, :title, :description, :status)
+  end
+
+  def move_params
+    params.require(:card).permit(
+      :target_status,
+      :previous_position,
+      :next_position
+    )
   end
 
   def handle_record_invalid(exception)
