@@ -1,6 +1,6 @@
 class CardsController < ApplicationController
   before_action :set_board
-  before_action :set_card, only: [ :update ]
+  before_action :set_card, only: [ :update, :destroy ]
 
   rescue_from ActiveRecord::RecordInvalid, with: :handle_record_invalid
   rescue_from ActiveRecord::RecordNotFound, with: :handle_record_not_found
@@ -20,6 +20,12 @@ class CardsController < ApplicationController
     ).call
 
     redirect_to board_path(@board), notice: "Card updated successfully."
+  end
+
+  def destroy
+    Cards::Delete.new(card: @card).call
+
+    redirect_to board_path(@board), notice: "Card deleted successfully."
   end
 
   private

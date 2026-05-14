@@ -123,7 +123,7 @@ export default function Show({ board, columns, flash }) {
   function CardItem({ boardId, card, editingCardId, setEditingCardId }) {
     const isEditing = editingCardId === card.id
 
-    const { data, setData, patch, processing } = useForm({
+    const { data, setData, patch, delete: destroy, processing } = useForm({
       title: card.title,
       description: card.description || '',
     })
@@ -134,6 +134,12 @@ export default function Show({ board, columns, flash }) {
       patch(`/boards/${boardId}/cards/${card.id}`, {
         onSuccess: () => setEditingCardId(null),
       })
+    }
+
+    function handleDelete() {
+      if (!window.confirm('Delete this card?')) return
+
+      destroy(`/boards/${boardId}/cards/${card.id}`)
     }
 
     if (isEditing) {
@@ -182,15 +188,25 @@ export default function Show({ board, columns, flash }) {
         {card.description && (
           <p className="mt-1 text-sm text-slate-600">{card.description}</p>
         )}
-
-        <button
-          type="button"
-          onClick={() => setEditingCardId(card.id)}
-          style={{ cursor: 'pointer' }}
-          className="text-xs text-slate-500 hover:text-slate-900"
-          >
-          Edit
-        </button>
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setEditingCardId(card.id)}
+            style={{ cursor: 'pointer' }}
+            className="text-xs text-slate-500 hover:text-slate-900"
+            >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={processing}
+            style={{ cursor: 'pointer' }}
+            className="text-xs text-slate-500 hover:text-slate-900"
+            >
+            Delete
+          </button>
+        </div>
       </article>
     )
   }
