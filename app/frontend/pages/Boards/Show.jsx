@@ -1,10 +1,14 @@
+import { useState } from 'react'
 import { useForm } from '@inertiajs/react'
+
 export default function Show({ board, columns, flash }) {
   const { data, setData, post, processing, reset } = useForm({
     title: '',
     description: '',
     status: 'backlog',
   })
+
+  const [editingCardId, setEditingCardId] = useState(null)
 
   function handleSubmit(event) {
     event.preventDefault()
@@ -20,14 +24,14 @@ export default function Show({ board, columns, flash }) {
         <h1 className="text-3xl font-bold text-slate-900">{board.name}</h1>
       </header>
       {flash?.notice && (
-        <div className="mb-4 rounded-lg bg-green-100 px-4 py-3 text-sm text-green-800">
-          {flash.notice}
+        <div className="mb-4">
+          <span className="inline-block rounded-lg bg-green-100 px-4 py-3 text-sm text-green-800">{flash.notice}</span>
         </div>
       )}
 
       {flash?.alert && (
-        <div className="mb-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-800">
-          {flash.alert}
+        <div className="mb-4">
+          <span className="inline-block rounded-lg bg-red-100 px-4 py-3 text-sm text-red-800">{flash.alert}</span>
         </div>
       )}
       <form onSubmit={handleSubmit} className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -88,12 +92,12 @@ export default function Show({ board, columns, flash }) {
         {columns.map((column) => (
           <div
             key={column.key}
-            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-          >
-            <h2 className="mb-4 font-semibold text-slate-800">
+            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-lg hover:border-slate-300"
+            >
+            <h2 className="text-sm font-semibold text-slate-800">
               {column.title}
             </h2>
-
+    
             <div className="space-y-3">
               {column.cards.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-400">
@@ -101,16 +105,13 @@ export default function Show({ board, columns, flash }) {
                 </div>
               ) : (
                 column.cards.map((card) => (
-                  <article
-                    key={card.id}
-                    className="rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm"
-                  >
-                    <h3 className="font-medium text-slate-900">{card.title}</h3>
-
-                    {card.description && (
-                      <p className="mt-1 text-sm text-slate-600">{card.description}</p>
-                    )}
-                  </article>
+                  <CardItem
+                  key={card.id}
+                  boardId={board.id}
+                  card={card}
+                  editingCardId={editingCardId}
+                  setEditingCardId={setEditingCardId}
+                />
                 ))
               )}
             </div>
@@ -119,4 +120,78 @@ export default function Show({ board, columns, flash }) {
       </section>
     </main>
   )
+  function CardItem({ boardId, card, editingCardId, setEditingCardId }) {
+    const isEditing = editingCardId === card.id
+
+    const { data, setData, patch, processing } = useForm({
+      title: card.title,
+      description: card.description || '',
+    })
+
+    function handleUpdate(event) {
+      event.preventDefault()
+
+      patch(`/boards/${boardId}/cards/${card.id}`, {
+        onSuccess: () => setEditingCardId(null),
+      })
+    }
+
+    if (isEditing) {
+      return (
+        <article className="rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm">
+          <form onSubmit={handleUpdate} className="space-y-3">
+            <input
+              value={data.title}
+              onChange={(event) => setData('title', event.target.value)}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
+
+            <textarea
+              value={data.description}
+              onChange={(event) => setData('description', event.target.value)}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              rows="3"
+            />
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="submit"
+                disabled={processing}
+                className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:opacity-50"
+              >
+                Save
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setEditingCardId(null)}
+                className="rounded-md border border-slate-300 px-4 py-2 text-sm transition hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </article>
+      )
+    }
+
+    return (
+      <article className="rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm">
+        <h3 className="font-medium text-slate-900">{card.title}</h3>
+
+        {card.description && (
+          <p className="mt-1 text-sm text-slate-600">{card.description}</p>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setEditingCardId(card.id)}
+          style={{ cursor: 'pointer' }}
+          className="text-xs text-slate-500 hover:text-slate-900"
+          >
+          Edit
+        </button>
+      </article>
+    )
+  }
 }
