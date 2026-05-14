@@ -6,7 +6,7 @@ class CardsController < ApplicationController
 
     ::Cards::Create.new(board: board, params: card_params).call
 
-    redirect_to root_path, notice: "Card created successfully."
+    redirect_to board_path(board), notice: "Card created successfully."
   end
 
   private

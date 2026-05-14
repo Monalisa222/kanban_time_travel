@@ -40,12 +40,26 @@ class BoardsController < ApplicationController
   end
 
   def columns
-    Card::STATUS_ORDER.map do |status|
-      {
-        key: status,
-        title: Card::STATUS_LABELS.fetch(status),
-        cards: []
-      }
-    end
+  cards_by_status = @board.cards.active.ordered.group_by(&:status)
+
+  Card::STATUS_ORDER.map do |status|
+    {
+      key: status,
+      title: Card::STATUS_LABELS.fetch(status),
+      cards: serialize_cards(cards_by_status.fetch(status, []))
+    }
   end
+end
+
+def serialize_cards(cards)
+  cards.map do |card|
+    {
+      id: card.id,
+      title: card.title,
+      description: card.description,
+      status: card.status,
+      position: card.position.to_s
+    }
+  end
+end
 end

@@ -94,8 +94,25 @@ export default function Show({ board, columns, flash }) {
               {column.title}
             </h2>
 
-            <div className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-400">
-              No cards yet
+            <div className="space-y-3">
+              {column.cards.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-400">
+                  No cards yet
+                </div>
+              ) : (
+                column.cards.map((card) => (
+                  <article
+                    key={card.id}
+                    className="rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm"
+                  >
+                    <h3 className="font-medium text-slate-900">{card.title}</h3>
+
+                    {card.description && (
+                      <p className="mt-1 text-sm text-slate-600">{card.description}</p>
+                    )}
+                  </article>
+                ))
+              )}
             </div>
           </div>
         ))}
