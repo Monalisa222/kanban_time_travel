@@ -8,6 +8,7 @@ module Cards
     end
 
     def call
+      validate_target_status!
       Card.transaction do
         previous_attributes = {
           status: card.status,
@@ -33,6 +34,12 @@ module Cards
     private
 
     attr_reader :card, :target_status, :previous_position, :next_position
+
+    def validate_target_status!
+      return if Card::STATUS_ORDER.include?(target_status)
+
+      raise ActiveRecord::RecordInvalid, card
+    end
 
     def record_event(previous_attributes)
       event_type =
