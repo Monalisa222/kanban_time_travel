@@ -25,4 +25,8 @@ Rails.application.routes.draw do
       patch :move, on: :member
     end
   end
+
+  match "*unmatched",
+      to: "application#handle_route_not_found",
+      via: :all
 end

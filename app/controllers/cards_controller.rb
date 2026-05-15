@@ -2,9 +2,6 @@ class CardsController < ApplicationController
   before_action :set_board
   before_action :set_card, only: [ :update, :destroy, :move ]
 
-  rescue_from ActiveRecord::RecordInvalid, with: :handle_record_invalid
-  rescue_from ActiveRecord::RecordNotFound, with: :handle_record_not_found
-
   def create
     board = Board.find(params[:board_id])
 
@@ -59,13 +56,5 @@ class CardsController < ApplicationController
       :previous_position,
       :next_position
     )
-  end
-
-  def handle_record_invalid(exception)
-    redirect_to board_path(@board), alert: exception.record.errors.full_messages.to_sentence
-  end
-
-  def handle_record_not_found
-    redirect_to root_path, alert: "Card or board was not found."
   end
 end
