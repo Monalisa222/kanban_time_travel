@@ -25,11 +25,7 @@ class BoardsController < ApplicationController
       historical_view: historical_view?,
       selected_time: selected_time&.iso8601,
       timeline: timeline_metadata,
-      activity_log: activity_log,
-      flash: {
-        notice: flash[:notice],
-        alert: flash[:alert]
-      }
+      activity_log: activity_log
     }
   end
 

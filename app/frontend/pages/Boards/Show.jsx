@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useForm, router } from '@inertiajs/react'
+import { useForm, router, usePage } from '@inertiajs/react'
+import FlashMessages from "@/Components/FlashMessages"
+
 
 import {
   DndContext,
@@ -148,17 +150,7 @@ export default function Show({ board, columns, activity_log, flash, historical_v
         <p className="text-sm text-slate-500">Kanban Time Travel</p>
         <h1 className="text-3xl font-bold text-slate-900">{board.name}</h1>
       </header>
-      {flash?.notice && (
-        <div className="mb-4">
-          <span className="inline-block rounded-lg bg-green-100 px-4 py-3 text-sm text-green-800">{flash.notice}</span>
-        </div>
-      )}
-
-      {flash?.alert && (
-        <div className="mb-4">
-          <span className="inline-block rounded-lg bg-red-100 px-4 py-3 text-sm text-red-800">{flash.alert}</span>
-        </div>
-      )}
+      <FlashMessages />
       {historical_view && (
         <div className="mb-4 rounded-lg bg-amber-100 px-4 py-3 text-sm text-amber-900">
           Viewing historical board state from {selected_time}. Editing is disabled.

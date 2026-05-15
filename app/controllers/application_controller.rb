@@ -2,6 +2,12 @@ class ApplicationController < ActionController::Base
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
 
+  inertia_share flash: -> {
+    {
+      notice: flash[:notice],
+      alert: flash[:alert]
+    }
+  }
   
   rescue_from ActiveRecord::RecordInvalid, with: :handle_record_invalid
   rescue_from ActiveRecord::RecordNotFound, with: :handle_record_not_found

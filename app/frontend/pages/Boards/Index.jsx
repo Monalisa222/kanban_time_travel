@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { router } from "@inertiajs/react";
 import { Link } from "@inertiajs/react";
+import FlashMessages from "@/Components/FlashMessages"
 
 export default function Index({ boards = [] }) {
   const [name, setName] = useState("");
@@ -32,6 +33,7 @@ export default function Index({ boards = [] }) {
             Create a board first, then manage cards inside that board.
           </p>
         </div>
+        <FlashMessages/>
 
         <form
           onSubmit={handleSubmit}
