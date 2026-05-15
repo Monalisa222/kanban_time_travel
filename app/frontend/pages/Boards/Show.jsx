@@ -255,9 +255,10 @@ export default function Show({ board, columns, activity_log, flash, historical_v
         </section>
       )}
       <DndContext
-        sensors={sensors}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd} >
+        sensors={historical_view ? [] : sensors}
+        onDragStart={historical_view ? undefined : handleDragStart}
+        onDragEnd={historical_view ? undefined : handleDragEnd}
+        >
         <section className="grid grid-cols-1 gap-4 md:grid-cols-5">
           {columns.map((column) => (
             <BoardColumn
