@@ -85,6 +85,10 @@ export default function Show({ board, columns, activity_log, flash, historical_v
     const previousCard = targetCards[insertIndex - 1]
     const nextCard = targetCards[insertIndex]
 
+    if (!card || !sourceColumn || !targetColumn) return
+
+    if (sourceColumn.key === targetColumn.key && active.id === over.id) return
+
     router.patch(`/boards/${board.id}/cards/${card.id}/move`, {
       card: {
         target_status: targetColumn.key,
