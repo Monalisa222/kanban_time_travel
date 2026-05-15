@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, router } from '@inertiajs/react'
 
 import {
@@ -93,18 +93,30 @@ export default function Show({ board, columns, activity_log, flash, historical_v
       },
     })
   }
+  const timelineEnd = timeline.end_time ? new Date(timeline.end_time).getTime() : null
+
   const timelineStart = timeline.start_time
   ? new Date(timeline.start_time).getTime()
   : null
-
-  const timelineEnd = timeline.end_time ? new Date(timeline.end_time).getTime() : null
 
   const selectedTimelineValue = selected_time
     ? new Date(selected_time).getTime()
     : timelineEnd
 
-  function handleTimelineChange(event) {
-    const timestamp = new Date(Number(event.target.value)).toISOString()
+  const [timelineValue, setTimelineValue] = useState(
+    selectedTimelineValue || timelineEnd,
+  )
+
+  useEffect(() => {
+    setTimelineValue(selectedTimelineValue || timelineEnd)
+  }, [selectedTimelineValue, timelineEnd])
+
+  function handleTimelineInput(event) {
+    setTimelineValue(Number(event.target.value))
+  }
+
+  function applyTimelineState() {
+    const timestamp = new Date(Number(timelineValue)).toISOString()
 
     router.get(
       `/boards/${board.id}`,
@@ -229,13 +241,15 @@ export default function Show({ board, columns, activity_log, flash, historical_v
             type="range"
             min={timelineStart}
             max={timelineEnd}
-            value={selectedTimelineValue || timelineEnd}
-            onChange={handleTimelineChange}
+            value={timelineValue || timelineEnd}
+            onChange={handleTimelineInput}
+            onMouseUp={applyTimelineState}
+            onTouchEnd={applyTimelineState}
             className="w-full"
           />
 
           <div className="mt-2 flex justify-between text-xs text-slate-500">
-            <span>{new Date(timelineStart).toLocaleString()}</span>
+            <span style={{'margin-right': 4}}>{new Date(timelineStart).toLocaleString()}</span>
             <span>{new Date(timelineEnd).toLocaleString()}</span>
           </div>
         </section>
@@ -336,25 +350,27 @@ export default function Show({ board, columns, activity_log, flash, historical_v
         {card.description && (
           <p className="mt-1 text-sm text-slate-600">{card.description}</p>
         )}
-        <div className="mt-3 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setEditingCardId(card.id)}
-            style={{ cursor: 'pointer' }}
-            className="text-xs text-slate-500 hover:text-slate-900"
-            >
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={processing}
-            style={{ cursor: 'pointer' }}
-            className="text-xs text-slate-500 hover:text-slate-900"
-            >
-            Delete
-          </button>
-        </div>
+        {!readOnly && (
+          <div className="mt-3 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setEditingCardId(card.id)}
+              style={{ cursor: 'pointer' }}
+              className="text-xs text-slate-500 hover:text-slate-900"
+              >
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={processing}
+              style={{ cursor: 'pointer' }}
+              className="text-xs text-slate-500 hover:text-slate-900"
+              >
+              Delete
+            </button>
+          </div>
+        )}
       </article>
     )
   }
