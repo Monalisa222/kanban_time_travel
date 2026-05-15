@@ -22,6 +22,8 @@ class BoardsController < ApplicationController
         name: @board.name
       },
       columns: columns,
+      historical_view: historical_view?,
+      selected_time: selected_time&.iso8601,
       activity_log: activity_log,
       flash: {
         notice: flash[:notice],
@@ -41,8 +43,27 @@ class BoardsController < ApplicationController
   end
 
   def columns
+    return historical_columns if historical_view?
+
+    live_columns
+  end
+
+  def live_columns
     cards_by_status = @board.cards.active.ordered.group_by(&:status)
 
+    build_columns(cards_by_status)
+  end
+
+  def historical_columns
+    cards_by_status = Boards::ReconstructState.new(
+      board: @board,
+      timestamp: selected_time
+    ).call
+
+    build_columns(cards_by_status)
+  end
+
+  def build_columns(cards_by_status)
     Card::STATUS_ORDER.map do |status|
       {
         key: status,
@@ -50,6 +71,18 @@ class BoardsController < ApplicationController
         cards: serialize_cards(cards_by_status.fetch(status, []))
       }
     end
+  end
+
+  def historical_view?
+    selected_time.present?
+  end
+
+  def selected_time
+    return if params[:at].blank?
+
+    Time.zone.parse(params[:at])
+  rescue ArgumentError
+    nil
   end
 
   def serialize_cards(cards)
