@@ -24,6 +24,7 @@ class BoardsController < ApplicationController
       columns: columns,
       historical_view: historical_view?,
       selected_time: selected_time&.iso8601,
+      timeline: timeline_metadata,
       activity_log: activity_log,
       flash: {
         notice: flash[:notice],
@@ -68,7 +69,7 @@ class BoardsController < ApplicationController
       {
         key: status,
         title: Card::STATUS_LABELS.fetch(status),
-        cards: serialize_cards(cards_by_status.fetch(status, []))
+        cards: cards_by_status.fetch(status, [])
       }
     end
   end
@@ -83,6 +84,17 @@ class BoardsController < ApplicationController
     Time.zone.parse(params[:at])
   rescue ArgumentError
     nil
+  end
+
+  def timeline_metadata
+    first_event_time = @board.board_events.minimum(:created_at)
+    last_event_time = @board.board_events.maximum(:created_at)
+
+    {
+      start_time: first_event_time&.iso8601,
+      end_time: last_event_time&.iso8601,
+      selected_time: selected_time&.iso8601
+    }
   end
 
   def serialize_cards(cards)

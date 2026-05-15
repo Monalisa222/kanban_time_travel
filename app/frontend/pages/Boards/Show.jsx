@@ -16,7 +16,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-export default function Show({ board, columns, activity_log, flash, historical_view, selected_time, }) {
+export default function Show({ board, columns, activity_log, flash, historical_view, selected_time, timeline, }) {
   const { data, setData, post, processing, reset } = useForm({
     title: '',
     description: '',
@@ -92,6 +92,39 @@ export default function Show({ board, columns, activity_log, flash, historical_v
         next_position: nextCard?.position || null,
       },
     })
+  }
+  const timelineStart = timeline.start_time
+  ? new Date(timeline.start_time).getTime()
+  : null
+
+  const timelineEnd = timeline.end_time ? new Date(timeline.end_time).getTime() : null
+
+  const selectedTimelineValue = selected_time
+    ? new Date(selected_time).getTime()
+    : timelineEnd
+
+  function handleTimelineChange(event) {
+    const timestamp = new Date(Number(event.target.value)).toISOString()
+
+    router.get(
+      `/boards/${board.id}`,
+      { at: timestamp },
+      {
+        preserveScroll: true,
+        preserveState: false,
+      },
+    )
+  }
+
+  function returnToLiveView() {
+    router.get(
+      `/boards/${board.id}`,
+      {},
+      {
+        preserveScroll: true,
+        preserveState: false,
+      },
+    )
   }
   return (
     <main className="min-h-screen bg-slate-100 p-6">
@@ -171,6 +204,42 @@ export default function Show({ board, columns, activity_log, flash, historical_v
           </div>
         </form>
       )}
+      {timelineStart && timelineEnd && (
+        <section className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="font-semibold text-slate-800">Timeline</h2>
+              <p className="text-sm text-slate-500">
+                Scrub to view the board at a previous moment.
+              </p>
+            </div>
+
+            {historical_view && (
+              <button
+                type="button"
+                onClick={returnToLiveView}
+                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+              >
+                Return to live
+              </button>
+            )}
+          </div>
+
+          <input
+            type="range"
+            min={timelineStart}
+            max={timelineEnd}
+            value={selectedTimelineValue || timelineEnd}
+            onChange={handleTimelineChange}
+            className="w-full"
+          />
+
+          <div className="mt-2 flex justify-between text-xs text-slate-500">
+            <span>{new Date(timelineStart).toLocaleString()}</span>
+            <span>{new Date(timelineEnd).toLocaleString()}</span>
+          </div>
+        </section>
+      )}
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
@@ -198,7 +267,7 @@ export default function Show({ board, columns, activity_log, flash, historical_v
       <RecentActivity activity_log={activity_log} />
     </main>
   )
-  function CardItem({ boardId, card, editingCardId, setEditingCardId, readOnly, }) {
+  function CardItem({ boardId, card, editingCardId, setEditingCardId, readOnly, dragHandleProps, }) {
     const isEditing = editingCardId === card.id
 
     const { data, setData, patch, delete: destroy, processing } = useForm({
@@ -319,15 +388,6 @@ export default function Show({ board, columns, activity_log, flash, historical_v
                   editingCardId={editingCardId}
                   setEditingCardId={setEditingCardId}
                   readOnly={readOnly}
-                  dragHandleProps={
-                    props.readOnly
-                      ? null
-                      : {
-                          ref: setActivatorNodeRef,
-                          attributes,
-                          listeners,
-                        }
-                  }
                 />
               ))
             )}
@@ -343,10 +403,14 @@ export default function Show({ board, columns, activity_log, flash, historical_v
       attributes,
       listeners,
       setNodeRef,
+      setActivatorNodeRef,
       transform,
       transition,
       isDragging,
-    } = useSortable({ id: card.id })
+    } = useSortable({
+      id: card.id,
+      disabled: props.readOnly,
+    })
 
     const style = {
       transform: CSS.Transform.toString(transform),
@@ -361,7 +425,18 @@ export default function Show({ board, columns, activity_log, flash, historical_v
         {...attributes}
         {...listeners}
       >
-        <CardItem {...props} />
+        <CardItem
+  {...props}
+  dragHandleProps={
+    props.readOnly
+      ? null
+      : {
+          ref: setActivatorNodeRef,
+          attributes,
+          listeners,
+        }
+  }
+/>
       </div>
     )
   }
