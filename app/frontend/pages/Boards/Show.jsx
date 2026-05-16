@@ -63,23 +63,45 @@ export default function Show({
       findColumnByCard(over.id) || findColumnByDroppableId(over.id)
 
     if (!card || !sourceColumn || !targetColumn) return
-    if (sourceColumn.key === targetColumn.key && active.id === over.id) return
 
-    const targetCards = targetColumn.cards.filter(
-      (targetCard) => targetCard.id !== card.id,
+    const isSameColumn = sourceColumn.key === targetColumn.key
+
+    const sourceIndex = sourceColumn.cards.findIndex(
+      (sourceCard) => sourceCard.id === Number(active.id),
     )
 
-    const overCardIndex = targetCards.findIndex(
+    const overIndexInOriginalColumn = targetColumn.cards.findIndex(
       (targetCard) => targetCard.id === Number(over.id),
     )
 
-    const insertIndex = overCardIndex >= 0 ? overCardIndex : targetCards.length
+    const targetCardsWithoutActiveCard = targetColumn.cards.filter(
+      (targetCard) => targetCard.id !== card.id,
+    )
+
+    let insertIndex
+
+    if (overIndexInOriginalColumn === -1) {
+      insertIndex = targetCardsWithoutActiveCard.length
+    } else if (isSameColumn && sourceIndex < overIndexInOriginalColumn) {
+      insertIndex = overIndexInOriginalColumn
+    } else {
+      insertIndex = targetCardsWithoutActiveCard.findIndex(
+        (targetCard) => targetCard.id === Number(over.id),
+      )
+    }
+
+    if (insertIndex < 0) {
+      insertIndex = targetCardsWithoutActiveCard.length
+    }
+
+    const previousCard = targetCardsWithoutActiveCard[insertIndex - 1]
+    const nextCard = targetCardsWithoutActiveCard[insertIndex]
 
     router.patch(`/boards/${board.id}/cards/${card.id}/move`, {
       card: {
         target_status: targetColumn.key,
-        previous_position: targetCards[insertIndex - 1]?.position || null,
-        next_position: targetCards[insertIndex]?.position || null,
+        previous_position: previousCard?.position || null,
+        next_position: nextCard?.position || null,
       },
     })
   }
